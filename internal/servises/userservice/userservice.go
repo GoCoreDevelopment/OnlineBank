@@ -67,6 +67,10 @@ func (s *userService) Transfer(senderID, receiverID, amount int) error {
 		return errors.New("the number cannot be zero")
 	}
 
+	if senderID == receiverID {
+		return errors.New("you can't transfer money to yourself")
+	}
+
 	return s.repo.TransferMoney(senderID, receiverID, amount)
 }
 

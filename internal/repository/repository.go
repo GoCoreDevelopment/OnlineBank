@@ -32,7 +32,7 @@ func NewRepository(db DBTX) Repository {
 }
 
 func (r *repository) CreateUser(user user.UserRegistred) (int, error) {
-	query := "INSERT INTO users (first_name, last_name, phone, email, password) VALUES ($1, $2, $3, $4, $5) RETURNING id;"
+	query := "INSERT INTO users (first_name, last_name, phone, email, password) VALUES ($1, $2, $3, $4, $5) RETURNING id"
 
 	var id int
 	err := r.db.QueryRow(query, user.FirstName, user.LastName, user.Phone, user.Email, user.Password).Scan(&id)
@@ -86,9 +86,8 @@ func (r *repository) GetUserID(email string) (int, error) {
 	return id, nil
 }
 
-func (r *repository) TransferMoney(senderID, receiverID, amount int) error {
+func (r *repository) TransferMoney(senderID, receiverID, amount int) (err error) {
 	tx, ok := r.db.(*sql.Tx)
-	var err error
 	if !ok {
 		tx, err = r.db.(*sql.DB).Begin()
 		if err != nil {
@@ -104,7 +103,6 @@ func (r *repository) TransferMoney(senderID, receiverID, amount int) error {
 		}()
 	}
 
-	//Берем баланс отправителя 
 	var senderBalance int
 	query := "SELECT balance FROM users WHERE id=$1 FOR UPDATE"
 	err = tx.QueryRow(query, senderID).Scan(&senderBalance)

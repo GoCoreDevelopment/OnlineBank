@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 )
 
 type UserHandler struct {
@@ -75,8 +74,7 @@ func (h *UserHandler) checkBalanceHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]int{
-		"user_id":      id,
-		"user_balance": balance,
+		"balance": balance,
 	})
 }
 
@@ -88,14 +86,14 @@ func (h *UserHandler) transactionHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "bad request"})
 	}
 
-	log.Printf("id_sender: %d, email_receiver: %s, amount_transaction: %d", senderID, transactionRequest.EmailReceiver, transactionRequest.AmountTransaction)
+	log.Printf("id_sender: %d, email_receiver: %s, amount_transaction: %d", senderID, transactionRequest.To, transactionRequest.Amount)
 
-	receiverID, err := h.userService.GetUserIDByEmail(transactionRequest.EmailReceiver)
+	receiverID, err := h.userService.GetUserIDByEmail(transactionRequest.To)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
-	err = h.userService.Transfer(senderID, receiverID, transactionRequest.AmountTransaction)
+	err = h.userService.Transfer(senderID, receiverID, transactionRequest.Amount)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
@@ -104,14 +102,8 @@ func (h *UserHandler) transactionHandler(c echo.Context) error {
 }
 
 func (h *UserHandler) InitHandlers(e *echo.Echo) {
-	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"http://localhost:3000"},
-		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE},
-		AllowCredentials: true,
-	}))
-
 	e.POST("/api/register", h.registredUserHandler)
 	e.POST("/api/login", h.loginUserHandler)
 	e.GET("/api/balance", h.checkBalanceHandler, middlewarecustom.MiddlewareBalance(h.jwtService))
-	e.POST("api/transaction", h.transactionHandler, middlewarecustom.MiddlewareBalance(h.jwtService))
+	e.POST("api/transfer", h.transactionHandler, middlewarecustom.MiddlewareBalance(h.jwtService))
 }

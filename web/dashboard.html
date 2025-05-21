@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Мой Банк</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-6">
+  <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-2xl space-y-6">
+    <h1 class="text-3xl font-bold text-center text-blue-600">👛 Money like</h1>
+
+    <!-- Баланс -->
+    <div class="bg-blue-100 p-4 rounded-xl flex justify-between items-center">
+      <div class="text-lg font-medium">Ваш баланс:</div>
+      <div id="balance" class="text-2xl font-bold text-blue-700">₽0.00</div>
+    </div>
+
+    <!-- Перевод -->
+    <div class="bg-gray-50 p-4 rounded-xl space-y-4 shadow-sm">
+      <h2 class="text-xl font-semibold">💸 Перевести средства</h2>
+      <form id="transfer-form" class="space-y-2">
+        <input type="email" name="to" placeholder="Email получателя" required class="w-full p-2 border rounded-lg" />
+        <input type="number" name="amount" placeholder="Сумма ₽" min="0.01" step="0.01" required class="w-full p-2 border rounded-lg" />
+        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">Отправить</button>
+      </form>
+    </div>
+
+    <!-- История -->
+    <div class="bg-gray-50 p-4 rounded-xl shadow-sm">
+      <h2 class="text-xl font-semibold mb-2">🧾 История операций</h2>
+      <ul id="history" class="space-y-2 text-sm text-gray-700">
+        <!-- История тут -->
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    async function fetchBalance() {
+      const res = await fetch("http://localhost:8080/api/balance", { credentials: "include" });
+      const data = await res.json();
+      document.getElementById("balance").textContent = `$${data.balance.toFixed(2)}`;
+    }
+
+    async function fetchHistory() {
+      const res = await fetch("http://localhost:8080/api/history", { credentials: "include" });
+      const data = await res.json();
+
+      const history = document.getElementById("history");
+      history.innerHTML = "";
+      data.forEach(tx => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <span class="font-medium">${tx.type === 'send' ? '⬅️ Отправлено' : '➡️ Получено'}</span>
+          $${tx.amount.toFixed(2)} — ${tx.to || tx.from}
+          <span class="text-gray-400">(${new Date(tx.timestamp).toLocaleString()})</span>
+        `;
+        history.appendChild(li);
+      });
+    }
+
+    document.getElementById("transfer-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const body = {
+        to: form.to.value,
+        amount: parseFloat(form.amount.value),
+      };
+
+      const res = await fetch("http://localhost:8080/api/transfer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        alert("Перевод выполнен!");
+        form.reset();
+        fetchBalance();
+        fetchHistory();
+      } else {
+        alert("Ошибка перевода");
+      }
+    });
+
+    window.onload = () => {
+      fetchBalance();
+      fetchHistory();
+    };
+  </script>
+</body>
+</html>

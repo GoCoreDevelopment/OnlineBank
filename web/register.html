@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Авторизация</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-100 to-blue-300 min-h-screen flex items-center justify-center">
+  <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md space-y-6">
+    <h1 id="form-title" class="text-3xl font-bold text-center text-blue-600">🚀 Регистрация</h1>
+
+    <!-- Регистрация -->
+    <form id="register-form" class="space-y-4">
+      <input type="text" name="first_name" placeholder="Имя" required class="w-full p-3 border border-gray-300 rounded-xl" />
+      <input type="text" name="last_name" placeholder="Фамилия" required class="w-full p-3 border border-gray-300 rounded-xl" />
+      <input type="tel" name="phone" placeholder="Телефон" required class="w-full p-3 border border-gray-300 rounded-xl" />
+      <input type="email" name="email" placeholder="Email" required class="w-full p-3 border border-gray-300 rounded-xl" />
+      <input type="password" name="password" placeholder="Пароль" required minlength="6" class="w-full p-3 border border-gray-300 rounded-xl" />
+      <input type="password" name="confirm_password" placeholder="Повторите пароль" required minlength="6" class="w-full p-3 border border-gray-300 rounded-xl" />
+      <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition">Зарегистрироваться</button>
+    </form>
+
+    <!-- Вход -->
+    <form id="login-form" class="space-y-4 hidden">
+      <input type="email" name="email" placeholder="Email" required class="w-full p-3 border border-gray-300 rounded-xl" />
+      <input type="password" name="password" placeholder="Пароль" required class="w-full p-3 border border-gray-300 rounded-xl" />
+      <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl hover:bg-green-700 transition">Войти</button>
+    </form>
+
+    <!-- Переключение -->
+    <p id="toggle-text" class="text-center text-sm text-gray-600">
+      Уже есть аккаунт? <button onclick="toggleForms()" class="text-blue-600 hover:underline">Войти</button>
+    </p>
+  </div>
+
+  <script>
+    const registerForm = document.getElementById("register-form");
+    const loginForm = document.getElementById("login-form");
+    const toggleText = document.getElementById("toggle-text");
+    const title = document.getElementById("form-title");
+
+    function toggleForms() {
+      const isRegister = !registerForm.classList.contains("hidden");
+      registerForm.classList.toggle("hidden");
+      loginForm.classList.toggle("hidden");
+
+      title.textContent = isRegister ? "🔐 Вход" : "🚀 Регистрация";
+      toggleText.innerHTML = isRegister
+        ? `Нет аккаунта? <button onclick="toggleForms()" class="text-blue-600 hover:underline">Зарегистрироваться</button>`
+        : `Уже есть аккаунт? <button onclick="toggleForms()" class="text-blue-600 hover:underline">Войти</button>`;
+    }
+
+    registerForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      if (e.target.password.value !== e.target.confirm_password.value) {
+        alert("Пароли не совпадают!");
+        return;
+      }
+
+      const body = {
+        first_name: e.target.first_name.value,
+        last_name: e.target.last_name.value,
+        phone: e.target.phone.value,
+        email: e.target.email.value,
+        password: e.target.password.value,
+      };
+
+      const res = await fetch("http://localhost:8080/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        alert("Регистрация успешна!");
+        toggleForms();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert("Ошибка регистрации: " + (err.error || "неизвестная ошибка"));
+      }
+    });
+
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const body = {
+        email: e.target.email.value,
+        password: e.target.password.value,
+      };
+      const res = await fetch("http://localhost:8080/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        window.location.href = "/dashboard";
+      } else {
+        alert("Неверный логин или пароль");
+      }
+    });
+  </script>
+</body>
+</html>
