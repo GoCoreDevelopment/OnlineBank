@@ -19,7 +19,7 @@ func NewConfig() (*Config, error) {
 
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
-		return nil, errors.New("satabaseURL it cannot be empty")
+		return nil, errors.New("databaseURL it cannot be empty")
 	}
 
 	secretKey := os.Getenv("SECRET_KEY_JWT")
